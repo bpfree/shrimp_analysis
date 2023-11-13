@@ -2,3 +2,12 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Data too large
+## Effort data
+data/effort_2014_2021.csv
+data/effort_2014_2021.RData
+
+## Ping data
+data/pings_2014_2021.csv
+data/pings_2014_2021.RData
