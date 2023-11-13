@@ -126,10 +126,10 @@ vess_comb <- rbind(vess_a,
   # use cumsum() to have transect go from 1 to 2 to ... (rolling calculation)
   # use RcppRoll::roll_sum(v)) [https://itsalocke.com/blog/understanding-rolling-calculations-in-r/]
   dplyr::mutate(transect_id = ifelse(
-    lead(VSBN) == VSBN &
-      lead(nm) <= 1.0 &
-      lead(mins_diff) <= 30,
-    paste0("transect_", row_number(), "_", lead(row_number())), NA))
+    lead(VSBN) == VSBN & 
+      lead(lag(nm)) >= 1.0 & 
+      lead(lag(mins_diff)) >= 30,
+    paste0(VSBN, "_", cumsum(lead(VSBN) != lag(VSBN, default = first(VSBN)))), lag()))
 
 View(vess_comb)
 
