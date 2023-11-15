@@ -1,9 +1,12 @@
 rm(list = ls())
 
 library(dplyr)
-library(marmap)
-library(sf)
 library(geosphere)
+library(marmap)
+library(Rcpp)
+library(sf)
+library(stringr)
+
 
 # Resources
 ## geosphere package Github: https://github.com/rspatial/geosphere
@@ -63,6 +66,7 @@ vessel1 <- shrimp_pings_2014 %>%
   dplyr::select(VSBN,
                 LONGITUDE,
                 LATITUDE,
+                STAMP,
                 start_date,
                 start_time) %>%
   # filter for test vessels
@@ -94,10 +98,13 @@ vessel1_diff <- vessel1 %>%
   ## ***Note: distances will need to be under 1 nautical mile (1 nautical mile = 1852 meters)
   mutate(nm = geosphere::distVincentyEllipsoid(p1 = cbind(LONGITUDE, LATITUDE),
                                                p2 = cbind(lag(LONGITUDE), lag(LATITUDE))) / 1852,
-         # calculate the time between 
+         # calculate the time between points
          mins_diff = as.numeric(STAMP - lag(STAMP), units = "mins")) %>%
   dplyr::select(-LONGITUDE,
-                -LATITUDE)
+                -LATITUDE,
+                -STAMP) %>%
+  dplyr::arrange(VSBN,
+                 start_date)
 
 vess_a <- vessel1_diff %>%
   dplyr::filter(VSBN == "1022072") %>%
@@ -123,15 +130,133 @@ vess_comb <- rbind(vess_a,
   dplyr::select(VSBN,
                 nm,
                 mins_diff) %>%
+  dplyr::mutate(vessel = as.numeric(factor(VSBN)),
+                nm_transect = ifelse(test = nm <= 1.0,
+                                     yes = 1,
+                                     no = 2),
+                mins_transect = ifelse(test = mins_diff <= 30 & mins_diff >= 0,
+                                       yes = 1,
+                                       no = 2)) %>%
+  # clean first row
+  dplyr::mutate(nm_transect = ifelse(test = row_number() == 1,
+                                     yes = 1,
+                                     no = nm_transect),
+                mins_transect = ifelse(test = row_number() == 1,
+                                       yes = 1,
+                                       no = mins_transect)) %>%
+  # clean last row
+  dplyr::mutate(nm_transect = ifelse(test = row_number() == dim(.)[1],
+                                     yes = ifelse(test = nm <= 1.0,
+                                                  yes = 1,
+                                                  no = 2),
+                                     no = nm_transect),
+                mins_transect = ifelse(test = row_number() == dim(.)[1],
+                                       yes = ifelse(test = mins_diff <= 30  & mins_diff >= 0,
+                                                    yes = 1,
+                                                    no = 2),
+                                       no = mins_transect)) %>%
+  # new ship
+  dplyr::mutate(new_ship = ifelse(test = row_number() == 1,
+                                  yes = T,
+                                  no = vessel == lag(vessel)),
+                transect_label = ifelse(test = row_number() == 1,
+                                        yes = "start",
+                                        no = ifelse(test = new_ship == TRUE & nm_transect == 2,
+                                                    yes = "start",
+                                                    no = ifelse(test = new_ship == F,
+                                                                yes = "start",
+                                                                no = ifelse(test = new_ship == TRUE & lead(nm_transect) == 2,
+                                                                            yes = "stop",
+                                                                            no = ifelse(test = new_ship == TRUE & nm_transect == 1,
+                                                                                        yes = "continue",
+                                                                                        no = ifelse(test = row_number == dim(.)[1] & new_ship == TRUE & nm_transect == 1 & mins_transect == 1,
+                                                                                                    yes = "continue",
+                                                                                                    no = ifelse(test = new_ship == FALSE,
+                                                                                                                yes = "start",
+                                                                                                                no = NA))))))))
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+vess_comb <- rbind(vess_a,
+                   vess_b,
+                   vess_c,
+                   vess_d) %>%
+  dplyr::select(VSBN,
+                nm,
+                mins_diff) %>%
   # use cumsum() to have transect go from 1 to 2 to ... (rolling calculation)
   # use RcppRoll::roll_sum(v)) [https://itsalocke.com/blog/understanding-rolling-calculations-in-r/]
   dplyr::mutate(transect_id = ifelse(
-    lead(VSBN) == VSBN & 
-      lead(lag(nm)) >= 1.0 & 
-      lead(lag(mins_diff)) >= 30,
-    paste0(VSBN, "_", cumsum(lead(VSBN) != lag(VSBN, default = first(VSBN)))), lag()))
+      test = row_number() == 1,
+      yes = paste0(VSBN, "_", cumsum(VSBN != lag(VSBN, default = first(VSBN)))),
+      no = ifelse(
+        test = VSBN == lag(VSBN) & nm <= 1.0 & mins_diff <= 30,
+        yes = paste0(VSBN, "_", cumsum(VSBN != lag(VSBN, default = first(VSBN))), "_", cumsum(abs(nm - lag(nm, default = last(nm))))),
+        no = "new transect"
+      ))) %>%
+  dplyr::mutate(transect_id = ifelse(
+    test = transect_id == "new transect",
+    yes = lead(transect_id),
+    no = transect_id
+  ))
+
+
+# Initialize a counter
+counter <- 0
+
+# Use sapply to iterate through each row of the data frame
+vess_comb$transect_id <- sapply(1:nrow(vess_comb), function(i) {
+  # Check the condition
+  if (is.na(vess_comb$nm))  {
+    # Increment the counter
+    counter <<- counter + 1
+    # Return the dynamic field name
+    paste("test", counter, sep = "")
+  } else {
+    # If condition is not met, return NA or any other value
+    NA
+  }
+})
 
 View(vess_comb)
+  
+VSBN == lead(VSBN) & 
+  lead(nm) <= 1 & 
+  lead(mins_diff) <= 30
+no = paste0(VSBN, "_", cumsum(VSBN != lag(VSBN, default = first(VSBN))))))
+
+
+
+
+test = is.na(nm),
+yes = paste0(VSBN, "_", RcppRoll::roll_sum(VSBN)),
+no = ifelse(
+  test = VSBN == lag(VSBN) & 
+    nm <= 1.0 & 
+    mins_diff <= 30,
+  yes = paste0(VSBN, "_", cumsum(VSBN != lag(VSBN, default = first(VSBN)))),
+  no = paste0(VSBN, "_", cumsum(VSBN != lag(VSBN, default = first(VSBN))))))
+
+
+
+lead(VSBN) == VSBN & 
+  between(lead(nm, default = nm[length(nm)]), nm - 1.0, nm + 1.0) & 
+  between(lead(mins_diff, default = mins_diff[length(mins_diff)]), mins_diff - 30, mins_diff + 30),
+lag(new_field),
+paste("transect", row_number())
 
 # Export data
 
+
+create value to be vessel_0 (cumsum start)
+if next value is not vessel or nm > 1 or mins_diff > 30, then paste value
+if next value is same vessel, but nm > 1 or mins_diff > 30, then paste value + 1
+if next value is same vessel and nm <= 1 and mins_diff <= 30, then paste previous value
