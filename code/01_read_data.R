@@ -148,7 +148,7 @@ years <- list(unique(ping_years$start_date))
 
 # run analysis
 i <- 1
-for(i in 1:length(years)){
+for(i in 1:1){
   
   # designate loop start time
   start_time <- Sys.time()
@@ -227,20 +227,27 @@ for(i in 1:length(years)){
                                     no = 1) %>% cumsum(),
                   vessel_trans = paste(VSBN, transect, sep = "_"))
   
+  # assign the shrimp pings data looped to templated annual data object
   assign(shrimp_ping_year, shrimp_pings)
-  
-  fishing_total <- Sys.time() - fishing_pings
-  print(fishing_total)
   
   # Export data
   sf::st_write(obj = shrimp_pings, dsn = shrimp_gpkg, layer = paste0("shrimp_pings", years[[1]][i]), append = F)
   
+  # calculate time to create annual shrimp fishing data
+  fishing_total <- Sys.time() - fishing_pings
+  print(fishing_total)
+  
   #####################################
   #####################################
   
+  # start time for ocean ping data analysis
   ocean_time <- Sys.time()
+  
+  # create shrimp ping data by year that do not fall on land
   shrimp_pings_ocean <- shrimp_pings %>%
+    # check validity or fix any invalid geometry
     sf::st_make_valid() %>%
+    
     # Remove continental land
     sf::st_difference(continents) %>%
     # Remove big island land
@@ -250,33 +257,59 @@ for(i in 1:length(years)){
     # Remove very small island land
     sf::st_difference(very_small_islands)
   
+  # assign the shrimp pings data looped to templated annual data object
   assign(shrimp_ping_ocean_year, shrimp_pings_ocean)
   
+  # Export data
+  sf::st_write(obj = shrimp_pings_ocean, dsn = shrimp_gpkg, layer = paste0("shrimp_pings_ocean", years[[1]][i]), append = F)
+  
+  # calculate time to create annual shrimp fishing data in only ocean areas
   ocean_total <- Sys.time() - ocean_time
   print(ocean_total)
   
-  total_time <- Sys.time() - start_time
-  print(total_time)
+  # print the time it takes to complete the first two parts (fishing and now ocean pings by year)
+  second_phase <- Sys.time() - start_time
+  print(paste("Time to complete first two analyses took:", second_phase))
   
   #####################################
   #####################################
   
   transect_time <- Sys.time()
+  
+  # create transects for marine only shrimp data by year
   shrimp_transects <- shrimp_pings_ocean %>%
+    # group by the vessel transect
     dplyr::group_by(vessel_trans) %>%
+    # summarise all the associated points along the transect
     dplyr::summarise() %>%
+    # ensure all points are multipoint
+    ## ***note: this is for any transect that is a single point
     sf::st_cast(x = .,
                 to = "MULTIPOINT") %>%
+    # change all the points to linestring to make them a single line feature
     sf::st_cast(x = .,
                 to = "LINESTRING")
   
+  # assign the shrimp transects data looped to templated annual data object
   assign(shrimp_transect_year, shrimp_transects)
   
+  # Export data
+  sf::st_write(obj = shrimp_pings_ocean, dsn = shrimp_gpkg, layer = paste0("shrimp_transects", years[[1]][i]), append = F)
+  
+  # calculate time to create annual shrimp fishing transect data in only ocean areas
+  transect_time <- Sys.time() - transect_time
+  print(transect_time)
+  
+  #####################################
+  #####################################
+  
+  # calculate total time to finish the three components (fishing, ocean, and transect)
   total_time <- Sys.time() - start_time
   print(total_time)
 }
 
-
+analysis_time <- Sys.time() - start_time
+print(analysis_time)
 
 #####################################
 
