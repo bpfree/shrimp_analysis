@@ -305,7 +305,7 @@ for(i in 1:1){
   
   # calculate total time to finish the three components (fishing, ocean, and transect)
   total_time <- Sys.time() - start_time
-  print(total_time)
+  print(paste0("Time to run the whole analysis for ", years[[1]][i], ": ", total_time))
 }
 
 analysis_time <- Sys.time() - start_time
