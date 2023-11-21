@@ -17,3 +17,6 @@ data/a_raw_data/USGSEsriWCMC_GlobalIslands_v3
 
 ## Created data
 data/shrimp_annual/shrimp.gpkg
+
+## Miscellaneous data
+data/zz_miscellaneous_data
