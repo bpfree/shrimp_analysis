@@ -64,8 +64,9 @@ data_dir <- "data/a_raw_data"
 ## land directory
 land_dir <- "data/a_raw_data/USGSEsriWCMC_GlobalIslands_v3/v108/globalislandsfix.gdb"
 
-## Expoort directory
+## Export directory
 shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
+land_gpkg <- "data/shrimp_annual/land.gpkg"
 
 #####################################
 
@@ -148,27 +149,49 @@ years <- list(unique(ping_years$start_date))
 # run analysis
 i <- 1
 for(i in 1:length(years)){
-  start_time2 <- Sys.time()
   
+  # designate loop start time
+  start_time <- Sys.time()
+  
+  # designate fishing analysis start time
+  fishing_pings <- Sys.time()
+  
+  #####################################
+  
+  # define annual object names for shrimp data
+  ## shrimp ping data by year
   shrimp_ping_year <- paste0("shrimp_pings", years[[1]][i])
+  
+  ## shrimp ping data only in ocean by year
   shrimp_ping_ocean_year <- paste0("shrimp_pings_ocean", years[[1]][i])
+  
+  ## shrimp transect data by year
   shrimp_transect_year <- paste0("shrimp_transects", years[[1]][i])
   
+  #####################################
+  #####################################
+  
+  # create shrimp ping data for a particular year
   shrimp_pings <- pings_2014_2021 %>%
     # limit to fishing activity
     dplyr::filter(vessel_state == "fishing") %>%
     # filter for tows that start in year of interest
     ## ***Note: faster to do as separate filter than combining with activity filter
     dplyr::filter(.,
+                  # search for the year within the STAMP field
                   stringr::str_detect(string = .$STAMP,
                                       pattern = years[[1]][i])) %>%
     # remove bad coordinates
+    ## any latitudes below or above -90 and 90 or longitudes below and above -180 and 180 are not real
     filter(between(LATITUDE, -90, 90), between(LONGITUDE, -180, 180)) %>%
     # remove duplicates 
     distinct(VSBN, SERIAL, STAMP, LONGITUDE, LATITUDE) %>%
+    
     # sort by time stamp within vessels
     arrange(VSBN, STAMP) %>%
+    # group by vessel
     group_by(VSBN, SERIAL) %>%
+    
     # calculate distances and times
     ## ***Note: geopackage was used originally by Kyle Dettloff (kyle.dettloff@noaa.gov) when creating the original dataset
     ##          The methods noted that the previous analysis used Vincenty ellipsoid method given it took the curvature
@@ -178,7 +201,7 @@ for(i in 1:length(years)){
     ## To learn more about the methods see here: http://www.movable-type.co.uk/scripts/latlong-vincenty.html
     ## and here: https://github.com/rspatial/geosphere/blob/master/R/distVincentyEllipsoid.R
     
-    ## ***Note: distances will need to be under 1 nautical mile (1 nautical mile = 1852 meters)
+    ## ***note: distances will need to be under 1 nautical mile (1 nautical mile = 1852 meters)
     mutate(nm = geosphere::distVincentyEllipsoid(cbind(LONGITUDE, LATITUDE),
                                                  cbind(lag(LONGITUDE), lag(LATITUDE))) / 1852,
            start_date = format(as.POSIXct(STAMP), format="%Y/%m/%d"),
@@ -187,12 +210,14 @@ for(i in 1:length(years)){
     # move the "nm" to be before the "mins" field
     dplyr::relocate(nm,
                     .before = mins) %>%
+    
     # convert to sf feature
     sf::st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
                  # set the coordinate reference system to WGS84
                  crs = 4326, # EPSG 4326 (https://epsg.io/4326)
                  # keep longitude and latitude fields
                  remove = FALSE) %>%
+    
     # create a transect field for each new vessel
     ## transect is defined as when the distance between points is under 1 nautical mile and within 30 minutes of the previous points
     ## ***note: a new transect will begin if the nautical mile distance is great than 1 or minutes difference is greater than 30
@@ -204,11 +229,51 @@ for(i in 1:length(years)){
   
   assign(shrimp_ping_year, shrimp_pings)
   
-  total_time <- Sys.time() - start_time2
-  print(total_time)
+  fishing_total <- Sys.time() - fishing_pings
+  print(fishing_total)
   
   # Export data
-  sf::st_write(obj = shrimp_ping_year, dsn = export_dir, layer = paste0("shrimp_pings", years[[1]][i]), append = F)
+  sf::st_write(obj = shrimp_pings, dsn = shrimp_gpkg, layer = paste0("shrimp_pings", years[[1]][i]), append = F)
+  
+  #####################################
+  #####################################
+  
+  ocean_time <- Sys.time()
+  shrimp_pings_ocean <- shrimp_pings %>%
+    sf::st_make_valid() %>%
+    # Remove continental land
+    sf::st_difference(continents) %>%
+    # Remove big island land
+    sf::st_difference(big_islands) %>%
+    # Remove small island land
+    sf::st_difference(small_islands) %>%
+    # Remove very small island land
+    sf::st_difference(very_small_islands)
+  
+  assign(shrimp_ping_ocean_year, shrimp_pings_ocean)
+  
+  ocean_total <- Sys.time() - ocean_time
+  print(ocean_total)
+  
+  total_time <- Sys.time() - start_time
+  print(total_time)
+  
+  #####################################
+  #####################################
+  
+  transect_time <- Sys.time()
+  shrimp_transects <- shrimp_pings_ocean %>%
+    dplyr::group_by(vessel_trans) %>%
+    dplyr::summarise() %>%
+    sf::st_cast(x = .,
+                to = "MULTIPOINT") %>%
+    sf::st_cast(x = .,
+                to = "LINESTRING")
+  
+  assign(shrimp_transect_year, shrimp_transects)
+  
+  total_time <- Sys.time() - start_time
+  print(total_time)
 }
 
 
