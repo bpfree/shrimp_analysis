@@ -109,11 +109,13 @@ load_start <- Sys.time()
 
 ## Pings
 load(file.path(data_dir, "pings_2014_2021.RData"))
+shrimp_time <- Sys.time()
 
 ### Load continental land data
 continents <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_Continents") %>%
   # use the land function to clean the data for later use
   land_function()
+continents_time <- Sys.time()
 
 ### Load big island land data
 big_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_BigIslands") %>%
@@ -121,19 +123,26 @@ big_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2
   sf::st_make_valid() %>%
   # use the land function to clean the data for later use
   land_function()
+big_islands_time <- Sys.time()
 
 ### Load small island land data
 small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_SmallIslands") %>%
   # use the land function to clean the data for later use
   land_function()
+small_islands_time <- Sys.time()
 
 ### Load very small island land data
 very_small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_VerySmallIslands") %>%
   # use the land function to clean the data for later use
   land_function()
+very_small_islands_time <- Sys.time()
 
-load_time <- Sys.time() - load_start
-print(paste("Time to take load shrimp and land data:", load_time))
+load_end <- Sys.time()
+paste(paste("Time to take load shrimp data:", load_end - load_start,
+            "Time to take load continents data:", load_end - continents_time,
+            "Time to take load big islands data:", load_end - big_islands_time,
+            "Time to take load small islands data:", load_end - small_islands_time,
+            "Time to take load very small islands data:", load_end - very_small_islands_time))
 
 #####################################
 
@@ -315,6 +324,14 @@ for(i in 1:1){
 
 analysis_time <- Sys.time() - start_time
 print(analysis_time)
+
+
+
+
+
+
+
+
 
 #####################################
 
