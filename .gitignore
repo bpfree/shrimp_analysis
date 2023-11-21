@@ -5,9 +5,15 @@
 
 # Data too large
 ## Effort data
-data/effort_2014_2021.csv
-data/effort_2014_2021.RData
+data/a_raw_data/effort_2014_2021.csv
+data/a_raw_data/effort_2014_2021.RData
 
 ## Ping data
-data/pings_2014_2021.csv
-data/pings_2014_2021.RData
+data/a_raw_data/pings_2014_2021.csv
+data/a_raw_data/pings_2014_2021.RData
+
+## USGS land data
+data/a_raw_data/USGSEsriWCMC_GlobalIslands_v3
+
+## Created data
+data/shrimp_annual/shrimp.gpkg
