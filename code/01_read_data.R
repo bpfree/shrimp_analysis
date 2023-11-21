@@ -101,6 +101,8 @@ land_function <- function(land_data){
 #####################################
 #####################################
 
+load_start <- Sys.time()
+
 # load data
 ## Effort
 # load(file.path(data_dir, "effort_2014_2021.RData"))
@@ -129,6 +131,9 @@ small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslands
 very_small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_VerySmallIslands") %>%
   # use the land function to clean the data for later use
   land_function()
+
+load_time <- Sys.time() - load_start
+print(paste("Time to take load shrimp and land data:", load_time))
 
 #####################################
 
