@@ -138,11 +138,12 @@ very_small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIs
 very_small_islands_time <- Sys.time()
 
 load_end <- Sys.time()
-paste(paste("Time to take load shrimp data:", load_end - load_start,
-            "Time to take load continents data:", load_end - continents_time,
-            "Time to take load big islands data:", load_end - big_islands_time,
-            "Time to take load small islands data:", load_end - small_islands_time,
-            "Time to take load very small islands data:", load_end - very_small_islands_time))
+paste(paste("Time to take load shrimp data:", shrimp_time - load_start,
+            "Time to take load continents data:", continents_time - shrimp_time,
+            "Time to take load big islands data:", big_islands_time - continents_time,
+            "Time to take load small islands data:", small_islands_time - big_islands_time,
+            "Time to take load very small islands data:", very_small_islands_time - small_islands_time,
+            "Time to take load shrimp and land data:", load_end - load_start))
 
 #####################################
 
@@ -162,7 +163,7 @@ years <- list(unique(ping_years$start_date))
 
 # run analysis
 i <- 1
-for(i in 1:1){
+for(i in 1:length(years)){
   
   # designate loop start time
   start_time <- Sys.time()
@@ -308,7 +309,7 @@ for(i in 1:1){
   assign(shrimp_transect_year, shrimp_transects)
   
   # Export data
-  sf::st_write(obj = shrimp_pings_ocean, dsn = shrimp_gpkg, layer = paste0("shrimp_transects", years[[1]][i]), append = F)
+  sf::st_write(obj = shrimp_transects, dsn = shrimp_gpkg, layer = paste0("shrimp_transects", years[[1]][i]), append = F)
   
   # calculate time to create annual shrimp fishing transect data in only ocean areas
   transect_time <- Sys.time() - transect_time
@@ -325,14 +326,7 @@ for(i in 1:1){
 analysis_time <- Sys.time() - start_time
 print(analysis_time)
 
-
-
-
-
-
-
-
-
+#####################################
 #####################################
 
 # # Troubleshooting
@@ -345,60 +339,22 @@ print(analysis_time)
 #   dplyr::filter((nm > 1.0 & mins < 30) | (nm < 1.0 & mins > 30))
 # View(test)
 
-## Examine top of Shrimp pinged data for 2014
-head(shrimp_pings)
-
-list(unique(shrimp_pings$VSBN))
-list(unique(shrimp_pings$SERIAL))
-
-#####################################
-#####################################
-
-# remove any pings that fall on land
-start_time2 <- Sys.time()
-shrimp_pings_ocean <- shrimp_pings %>%
-  sf::st_make_valid() %>%
-  # Remove continental land
-  sf::st_difference(continents) %>%
-  # Remove big island land
-  sf::st_difference(big_islands) %>%
-  # Remove small island land
-  sf::st_difference(small_islands) %>%
-  # Remove very small island land
-  sf::st_difference(very_small_islands)
-
-assign(shrimp_ping_ocean_year, shrimp_pings_ocean)
-
-total_time <- Sys.time() - start_time2
-print(total_time)
-
-#####################################
-#####################################
-
-start_time <- Sys.time()
-shrimp_transects <- shrimp_pings_ocean %>%
-  dplyr::group_by(vessel_trans) %>%
-  dplyr::summarise() %>%
-  sf::st_cast(x = .,
-              to = "MULTIPOINT") %>%
-  sf::st_cast(x = .,
-              to = "LINESTRING")
-
-assign(shrimp_transect_year, shrimp_transects)
-
-total_time <- Sys.time() - start_time
-print(total_time)
-
 #####################################
 #####################################
 
 # Export data
 ## Shrimp
-sf::st_write(obj = shrimp_pings_2014, dsn = export_dir, layer = "shrimp_pings", append = F)
-sf::st_write(obj = shrimp_2014_transects, dsn = export_dir, layer = "shrimp_transects", append = F)
+# sf::st_write(obj = shrimp_pings_2014, dsn = export_dir, layer = "shrimp_pings", append = F)
+# sf::st_write(obj = shrimp_2014_transects, dsn = export_dir, layer = "shrimp_transects", append = F)
 
 ## land data
-sf::st_write(obj = continents, dsn = export_dir, layer = "continents", append = F)
-sf::st_write(obj = big_islands, dsn = export_dir, layer = "big_islands", append = F)
-sf::st_write(obj = small_islands, dsn = export_dir, layer = "small_islands", append = F)
-sf::st_write(obj = very_small_islands, dsn = export_dir, layer = "very_small_islands", append = F)
+sf::st_write(obj = continents, dsn = land_gpkg, layer = "continents", append = F)
+sf::st_write(obj = big_islands, dsn = land_gpkg, layer = "big_islands", append = F)
+sf::st_write(obj = small_islands, dsn = land_gpkg, layer = "small_islands", append = F)
+sf::st_write(obj = very_small_islands, dsn = land_gpkg, layer = "very_small_islands", append = F)
+
+#####################################
+#####################################
+
+# calculate end time and print time difference
+print(Sys.time() - start) # print how long it takes to calculate
