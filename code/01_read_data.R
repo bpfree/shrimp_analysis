@@ -162,7 +162,7 @@ years <- list(unique(ping_years$start_date))
 #####################################
 
 # run analysis
-i <- 1
+#i <- 1
 for(i in 1:length(years)){
   
   # designate loop start time
