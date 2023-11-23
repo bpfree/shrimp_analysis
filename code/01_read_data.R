@@ -156,7 +156,7 @@ ping_years <- pings_2014_2021 %>%
   dplyr::select(STAMP) %>%
   dplyr::mutate(start_date = format(as.Date(STAMP, format="%Y/%m/%d"),"%Y"))
 
-years <- list(unique(ping_years$start_date))
+years <- as.vector((unique(ping_years$start_date)))
 
 #####################################
 #####################################
