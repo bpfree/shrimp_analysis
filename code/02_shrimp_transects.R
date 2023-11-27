@@ -51,27 +51,23 @@ pacman::p_load(docxtractr,
 #####################################
 #####################################
 
-# Create directories
-dir.create("data/shrimp_annual")
-dir.create("data/a_raw_data")
-
-#####################################
-
 # Directories
 ## shrimp directory
 data_dir <- "data/a_raw_data"
 
+## big islands directory
+big_islands_dir <- "data/shrimp_annual"
+
 ## land directory
-land_dir <- "data/a_raw_data/USGSEsriWCMC_GlobalIslands_v3/v108/globalislandsfix.gdb"
+land_dir <- "data/shrimp_annual/land.gpkg"
 
 ## Export directory
 shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
-land_gpkg <- "data/shrimp_annual/land.gpkg"
 
 #####################################
 
 # View layer names within geodatabase
-## ****Note: should notice 4 layers
+## ****Note: should notice 3 layers
 sf::st_layers(dsn = land_dir,
               do_count = TRUE)
 
@@ -112,29 +108,19 @@ load(file.path(data_dir, "pings_2014_2021.RData"))
 shrimp_time <- Sys.time()
 
 ### Load continental land data
-continents <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_Continents") %>%
-  # use the land function to clean the data for later use
-  land_function()
+continents <- sf::st_read(dsn = land_dir, layer = "continents")
 continents_time <- Sys.time()
 
 ### Load big island land data
-big_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_BigIslands") %>%
-  # make all features valid as an error may be generated otherwise
-  sf::st_make_valid() %>%
-  # use the land function to clean the data for later use
-  land_function()
+big_islands <- terra::readRDS(file = file.path(big_islands_dir, "big_islands.RData"))
 big_islands_time <- Sys.time()
 
 ### Load small island land data
-small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_SmallIslands") %>%
-  # use the land function to clean the data for later use
-  land_function()
+small_islands <- sf::st_read(dsn = land_dir, layer = "small_islands")
 small_islands_time <- Sys.time()
 
 ### Load very small island land data
-very_small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_VerySmallIslands") %>%
-  # use the land function to clean the data for later use
-  land_function()
+very_small_islands <- sf::st_read(dsn = land_dir, layer = "very_small_islands")
 very_small_islands_time <- Sys.time()
 
 load_end <- Sys.time()
@@ -162,7 +148,7 @@ years <- as.vector((unique(ping_years$start_date)))
 #####################################
 
 # run analysis
-#i <- 1
+i <- 1
 for(i in 1:length(years)){
   
   # designate loop start time
@@ -175,13 +161,13 @@ for(i in 1:length(years)){
   
   # define annual object names for shrimp data
   ## shrimp ping data by year
-  shrimp_ping_year <- paste0("shrimp_pings", years[[1]][i])
+  shrimp_ping_year <- paste0("shrimp_pings", years[i])
   
   ## shrimp ping data only in ocean by year
-  shrimp_ping_ocean_year <- paste0("shrimp_pings_ocean", years[[1]][i])
+  shrimp_ping_ocean_year <- paste0("shrimp_pings_ocean", years[i])
   
   ## shrimp transect data by year
-  shrimp_transect_year <- paste0("shrimp_transects", years[[1]][i])
+  shrimp_transect_year <- paste0("shrimp_transects", years[i])
   
   #####################################
   #####################################
@@ -320,7 +306,7 @@ for(i in 1:length(years)){
   
   # calculate total time to finish the three components (fishing, ocean, and transect)
   total_time <- Sys.time() - start_time
-  print(paste0("Time to run the whole analysis for ", years[[1]][i], ": ", total_time))
+  print(paste0("Time to run the whole analysis for ", years[i], ": ", total_time))
 }
 
 analysis_time <- Sys.time() - start_time
@@ -346,13 +332,6 @@ print(analysis_time)
 ## Shrimp
 # sf::st_write(obj = shrimp_pings_2014, dsn = export_dir, layer = "shrimp_pings", append = F)
 # sf::st_write(obj = shrimp_2014_transects, dsn = export_dir, layer = "shrimp_transects", append = F)
-
-## land data
-sf::st_write(obj = continents, dsn = land_gpkg, layer = "continents", append = F)
-sf::st_write(obj = big_islands, dsn = land_gpkg, layer = "big_islands", append = F)
-sf::st_write(obj = small_islands, dsn = land_gpkg, layer = "small_islands", append = F)
-sf::st_write(obj = very_small_islands, dsn = land_gpkg, layer = "very_small_islands", append = F)
-
 #####################################
 #####################################
 
