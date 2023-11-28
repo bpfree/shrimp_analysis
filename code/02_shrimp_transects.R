@@ -148,8 +148,8 @@ years <- as.vector((unique(ping_years$start_date)))
 #####################################
 
 # run analysis
-#i <- 1
-for(i in 1:length(years)){
+i <- 2
+for(i in 1:8){
   
   # designate loop start time
   start_time <- Sys.time()
@@ -181,7 +181,7 @@ for(i in 1:length(years)){
     dplyr::filter(.,
                   # search for the year within the STAMP field
                   stringr::str_detect(string = .$STAMP,
-                                      pattern = years[[1]][i])) %>%
+                                      pattern = years[i])) %>%
     # remove bad coordinates
     ## any latitudes below or above -90 and 90 or longitudes below and above -180 and 180 are not real
     filter(between(LATITUDE, -90, 90), between(LONGITUDE, -180, 180)) %>%
@@ -232,7 +232,7 @@ for(i in 1:length(years)){
   assign(shrimp_ping_year, shrimp_pings)
   
   # Export data
-  sf::st_write(obj = shrimp_pings, dsn = shrimp_gpkg, layer = paste0("shrimp_pings", years[[1]][i]), append = F)
+  sf::st_write(obj = shrimp_pings, dsn = shrimp_gpkg, layer = paste0("shrimp_pings", years[i]), append = F)
   
   # calculate time to create annual shrimp fishing data
   fishing_total <- Sys.time() - fishing_pings
@@ -262,7 +262,7 @@ for(i in 1:length(years)){
   assign(shrimp_ping_ocean_year, shrimp_pings_ocean)
   
   # Export data
-  sf::st_write(obj = shrimp_pings_ocean, dsn = shrimp_gpkg, layer = paste0("shrimp_pings_ocean", years[[1]][i]), append = F)
+  sf::st_write(obj = shrimp_pings_ocean, dsn = shrimp_gpkg, layer = paste0("shrimp_pings_ocean", years[i]), append = F)
   
   # calculate time to create annual shrimp fishing data in only ocean areas
   ocean_total <- Sys.time() - ocean_time
@@ -295,7 +295,7 @@ for(i in 1:length(years)){
   assign(shrimp_transect_year, shrimp_transects)
   
   # Export data
-  sf::st_write(obj = shrimp_transects, dsn = shrimp_gpkg, layer = paste0("shrimp_transects", years[[1]][i]), append = F)
+  sf::st_write(obj = shrimp_transects, dsn = shrimp_gpkg, layer = paste0("shrimp_transects", years[i]), append = F)
   
   # calculate time to create annual shrimp fishing transect data in only ocean areas
   transect_time <- Sys.time() - transect_time
