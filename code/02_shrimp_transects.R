@@ -74,29 +74,6 @@ sf::st_layers(dsn = land_dir,
 #####################################
 #####################################
 
-# Function to create clean land feature data
-## The function will take the input (land data) and then return a single feature
-
-land_function <- function(land_data){
-  land_layer <- land_data %>%
-    # rectify any issues
-    sf::st_make_valid() %>%
-    # create field called "land"
-    dplyr::mutate(land = "land") %>%
-    # select the "land" field
-    dplyr::select(land) %>%
-    # reproject the coordinate reference system
-    sf::st_transform("EPSG:4326") %>%
-    # group all rows by the different elements with "land" field -- this will create a row for the grouped data
-    dplyr::group_by(land) %>%
-    # summarise all those grouped elements together -- in effect this will create a single feature
-    dplyr::summarise()
-  return(land_layer)
-}
-
-#####################################
-#####################################
-
 load_start <- Sys.time()
 
 # load data
@@ -148,8 +125,8 @@ years <- as.vector((unique(ping_years$start_date)))
 #####################################
 
 # run analysis
-i <- 2
-for(i in 1:8){
+i <- 5
+for(i in 1:length(years)){
   
   # designate loop start time
   start_time <- Sys.time()
@@ -188,10 +165,13 @@ for(i in 1:8){
     # remove duplicates 
     distinct(VSBN, SERIAL, STAMP, LONGITUDE, LATITUDE) %>%
     
-    # sort by time stamp within vessels
-    arrange(VSBN, STAMP) %>%
+    # # sort by time stamp within vessels
+    # arrange(VSBN, STAMP) %>%
     # group by vessel
     group_by(VSBN, SERIAL) %>%
+    
+    # sort by time stamp within vessels and serial numbers
+    arrange(VSBN, SERIAL, STAMP) %>%
     
     # calculate distances and times
     ## ***Note: geopackage was used originally by Kyle Dettloff (kyle.dettloff@noaa.gov) when creating the original dataset
@@ -226,7 +206,7 @@ for(i in 1:8){
     dplyr::mutate(transect = ifelse(test = (nm <= 1.0 & mins <= 30) | is.na(nm),
                                     yes = 0,
                                     no = 1) %>% cumsum(),
-                  vessel_trans = paste(VSBN, transect, sep = "_"))
+                  vessel_trans = paste(VSBN, SERIAL, transect, sep = "_"))
   
   # assign the shrimp pings data looped to templated annual data object
   assign(shrimp_ping_year, shrimp_pings)
