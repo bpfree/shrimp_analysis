@@ -120,16 +120,14 @@ paste("Time to take load 2014 data:", time2014 - load_start,
 
 # combine all transects
 ## combine all rows of transects across years 
-shrimp_transects_2014_2021 <- rbind(shrimp_transects2014,
-                                    shrimp_transects2015,
-                                    shrimp_transects2016,
-                                    shrimp_transects2017,
-                                    shrimp_transects2018,
-                                    shrimp_transects2019,
-                                    shrimp_transects2020,
-                                    shrimp_transects2021)
-
-shrimp_transects <- shrimp_transects_2014_2021 %>%
+shrimp_transects <- rbind(shrimp_transects2014,
+                          shrimp_transects2015,
+                          shrimp_transects2016,
+                          shrimp_transects2017,
+                          shrimp_transects2018,
+                          shrimp_transects2019,
+                          shrimp_transects2020,
+                          shrimp_transects2021) %>%
   # reproject the coordinate reference system to match BOEM call areas
   sf::st_transform("EPSG:5070") # EPSG 5070 (https://epsg.io/5070)
 
@@ -138,9 +136,6 @@ shrimp_transects <- shrimp_transects_2014_2021 %>%
 
 # Export data
 ## Vector
-sf::st_write(obj = shrimp_transects_2014_2021, dsn = shrimp_gpkg, layer = "shrimp_transects_2014_2021", sep = "/", append = F)
-sf::st_write(obj = shrimp_transects_2014_2021, dsn = file.path(paste(data_dir, "shrimp_transects_2014_2021.shp", sep = "/")), append = F)
-
 sf::st_write(obj = shrimp_transects, dsn = shrimp_gpkg, layer = "shrimp_transects", sep = "/", append = F)
 sf::st_write(obj = shrimp_transects, dsn = file.path(paste(data_dir, "shrimp_transects.shp", sep = "/")), append = F)
 
