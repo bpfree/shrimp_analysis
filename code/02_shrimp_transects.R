@@ -66,7 +66,7 @@ shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
 
 #####################################
 
-# View layer names within geodatabase
+# View layer names within geopackage
 ## ****Note: should notice 3 layers
 sf::st_layers(dsn = land_dir,
               do_count = TRUE)
@@ -101,12 +101,12 @@ very_small_islands <- sf::st_read(dsn = land_dir, layer = "very_small_islands")
 very_small_islands_time <- Sys.time()
 
 load_end <- Sys.time()
-paste(paste("Time to take load shrimp data:", shrimp_time - load_start,
-            "Time to take load continents data:", continents_time - shrimp_time,
-            "Time to take load big islands data:", big_islands_time - continents_time,
-            "Time to take load small islands data:", small_islands_time - big_islands_time,
-            "Time to take load very small islands data:", very_small_islands_time - small_islands_time,
-            "Time to take load shrimp and land data:", load_end - load_start))
+paste("Time to take load shrimp data:", shrimp_time - load_start,
+      "Time to take load continents data:", continents_time - shrimp_time,
+      "Time to take load big islands data:", big_islands_time - continents_time,
+      "Time to take load small islands data:", small_islands_time - big_islands_time,
+      "Time to take load very small islands data:", very_small_islands_time - small_islands_time,
+      "Time to take load shrimp and land data:", load_end - load_start)
 
 #####################################
 
@@ -125,7 +125,7 @@ years <- as.vector((unique(ping_years$start_date)))
 #####################################
 
 # run analysis
-i <- 5
+#i <- 5
 for(i in 1:length(years)){
   
   # designate loop start time
@@ -305,13 +305,6 @@ print(analysis_time)
 #   dplyr::filter((nm > 1.0 & mins < 30) | (nm < 1.0 & mins > 30))
 # View(test)
 
-#####################################
-#####################################
-
-# Export data
-## Shrimp
-# sf::st_write(obj = shrimp_pings_2014, dsn = export_dir, layer = "shrimp_pings", append = F)
-# sf::st_write(obj = shrimp_2014_transects, dsn = export_dir, layer = "shrimp_transects", append = F)
 #####################################
 #####################################
 
