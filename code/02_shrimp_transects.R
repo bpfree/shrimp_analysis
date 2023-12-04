@@ -63,6 +63,7 @@ land_dir <- "data/shrimp_annual/land.gpkg"
 
 ## Export directory
 shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
+shapefile_dir <- "data/shrimp_annual/shapefiles"
 
 #####################################
 
@@ -70,6 +71,13 @@ shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
 ## ****Note: should notice 3 layers
 sf::st_layers(dsn = land_dir,
               do_count = TRUE)
+
+#####################################
+#####################################
+
+# Set parameters
+## Coordinate reference system
+ping_crs <- 4326 # WGS84 --> EPSG 4326 (https://epsg.io/4326)
 
 #####################################
 #####################################
@@ -125,7 +133,7 @@ years <- as.vector((unique(ping_years$start_date)))
 #####################################
 
 # run analysis
-#i <- 5
+# i <- 2
 for(i in 1:length(years)){
   
   # designate loop start time
@@ -195,7 +203,7 @@ for(i in 1:length(years)){
     # convert to sf feature
     sf::st_as_sf(coords = c("LONGITUDE", "LATITUDE"),
                  # set the coordinate reference system to WGS84
-                 crs = 4326, # EPSG 4326 (https://epsg.io/4326)
+                 crs = ping_crs, # EPSG 4326 (https://epsg.io/4326)
                  # keep longitude and latitude fields
                  remove = FALSE) %>%
     
@@ -269,13 +277,19 @@ for(i in 1:length(years)){
                 to = "MULTIPOINT") %>%
     # change all the points to linestring to make them a single line feature
     sf::st_cast(x = .,
-                to = "LINESTRING")
+                to = "LINESTRING") %>%
+    # reproject the coordinate reference system to match BOEM call areas
+    sf::st_transform("EPSG:5070") # EPSG 5070 (https://epsg.io/5070)
   
   # assign the shrimp transects data looped to templated annual data object
   assign(shrimp_transect_year, shrimp_transects)
   
   # Export data
+  ## Geopackage
   sf::st_write(obj = shrimp_transects, dsn = shrimp_gpkg, layer = paste0("shrimp_transects", years[i]), append = F)
+  
+  ## Shapefile (***note: this is so the year transects can get used by terra to create a raster dataset)
+  sf::st_write(obj = shrimp_transects, dsn = file.path(paste(shapefile_dir, paste0("shrimp_transects_", years[i], ".shp"), sep = "/")), append = F)
   
   # calculate time to create annual shrimp fishing transect data in only ocean areas
   transect_time <- Sys.time() - transect_time
@@ -300,7 +314,7 @@ print(analysis_time)
 #   # dplyr::filter(VSBN %in% c("1022072", "1038803", "1050624")) %>%
 #   # dplyr::mutate(transect = ifelse(test = (nm <= 1.0 & mins >= 0 & mins <= 30) | is.na(nm),
 #   #                                 yes = 0,
-#   #                                 no = 1) %>% cumsum,
+#   #                                 no = 1) %>% cumsum(),
 #   #               vessel_trans = paste(VSBN, transect, sep = "_")) %>%
 #   dplyr::filter((nm > 1.0 & mins < 30) | (nm < 1.0 & mins > 30))
 # View(test)
