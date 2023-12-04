@@ -1,6 +1,6 @@
-###############################################
-### 04. Shrimp Analysis -- Shrimp Transects ###
-###############################################
+####################################################
+### 04. Shrimp Analysis -- Year transect rasters ###
+####################################################
 
 # Clear environment
 rm(list = ls())
@@ -52,31 +52,53 @@ pacman::p_load(docxtractr,
 #####################################
 
 # Directories
-## shrimp geopackage
+## shrimp shapefiles
 shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
-data_dir <- "data/shrimp_annual"
+shapefile_dir <- "data/shrimp_annual/shapefiles"
 
 ## Export directory
-raster_dir <- "data/shrimp_annual"
+raster_dir <- "data/shrimp_annual/rasters"
+
+#####################################
+
+# View layer names within geopackage
+sf::st_layers(dsn = shrimp_gpkg,
+              do_count = TRUE)
 
 #####################################
 #####################################
 
-shrimp_transects2014 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects2014") %>%
-  # reproject the coordinate reference system to match BOEM call areas
-  sf::st_transform("EPSG:5070") # EPSG 5070 (https://epsg.io/5070)
+# list all shapefiles to later extract the years
+shapefiles <- list.files(shapefile_dir,
+                         # pattern for finding files that match the shapefiles
+                         pattern = ".shp")
 
-shrimp_transects <- terra::vect(file.path(data_dir, "shrimp_transects.shp", sep = "/"))
+# create species list of unique years of shrimp transects
+years_list <- unique(sapply(strsplit(x = shapefiles,
+                                     # split file names into elements by "_"
+                                     split = "_"),
+                            # function across all files is to return third element from the string
+                            ## in this case that is the year
+                            function(x) x[3])) %>%
+  # substitute nothing ("") in place of the .shp that is at the end of the string
+  ## this will give only the year
+  sub(".shp", "", .)
 
 #####################################
 #####################################
 
-# Study Area
+## load all years data
+shrimp_2014_2021 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects_2014_2021")
+
+#####################################
+#####################################
+
+# create study area
 ## get minimum and maximum values for all the years
-xmin <- sf::st_bbox(shrimp_transects2014)$xmin
-xmax <- sf::st_bbox(shrimp_transects2014)$xmax
-ymin <- sf::st_bbox(shrimp_transects2014)$ymin
-ymax <- sf::st_bbox(shrimp_transects2014)$ymax
+xmin <- sf::st_bbox(shrimp_2014_2021)$xmin
+xmax <- sf::st_bbox(shrimp_2014_2021)$xmax
+ymin <- sf::st_bbox(shrimp_2014_2021)$ymin
+ymax <- sf::st_bbox(shrimp_2014_2021)$ymax
 
 ## Create points for study area
 ### Add points as they need to be drawn (clockwise or counterclockwise)
@@ -121,7 +143,7 @@ plot(aoi_poly)
 #####################################
 #####################################
 
-# Create grid
+# create raster grid
 ## Square
 ### Grid with 100 meter cell size
 #### Create a template raster that has the extent of the study area
@@ -133,6 +155,7 @@ rast_temp <- terra::rast(aoi_poly,
                          # have coordinate reference system as the study area (EPSG:5070)
                          crs = crs(aoi_poly))
 
+# see dimensions
 dim(rast_temp)
 
 #### Create raster filed with the data from the study area
@@ -143,26 +166,56 @@ rast_100m <- terra::rasterize(x = aoi_poly,
 #####################################
 #####################################
 
+i <- 1
+for(i in 1:length(years_list)){
+  
+  # designate loop start time
+  start_time <- Sys.time()
+  
+  #####################################
+  
+  # load data
+  shrimp_year <- terra::vect(file.path(shapefile_dir, paste0("shrimp_transects_", years_list[[i]], ".shp")))
+  
+  # define annual object names for shrimp data
+  ## shrimp ping data by year
+  raster_year <- paste("shrimp_raster", years[i], sep = "_")
+  
+  shrimp_rast <- terra::rasterizeGeom(x = shrimp_year,
+                                      # use the 100m raster grid
+                                      y = rast_100m,
+                                      # count number of occurrences in very cell
+                                      fun = "count")
+  paste("Time takes to create data:", Sys.time() - start_time)
+  
+  # assign the shrimp pings data looped to templated annual data object
+  assign(raster_year, shrimp_rast)
+  
+  # plot shrimp transect raster
+  plot(shrimp_rast)
+  
+  #####################################
+  
+  ## Raster
+  terra::writeRaster(shrimp_rast, filename = file.path(raster_dir, "shrimp_transect_2014.grd"), overwrite = T)
+   
+}
+
+#####################################
+#####################################
+
+
+
+#####################################
+#####################################
+
 # random <- as.vector(round(runif(n = 10,
 #                           min = 0,
 #                           max = 100000), 0))
 # 
 # transect_test <- shrimp_transects[random]
 
-raster_start <- Sys.time()
-shrimp_rast <- terra::rasterizeGeom(x = shrimp_transects2014,
-                                    # use the 100m raster grid
-                                    y = rast_100m,
-                                    # count number of occurrences in very cell
-                                    fun = "count")
-paste("Time takes to create data:", Sys.time() - raster_start)
-plot(shrimp_rast)
 
-#####################################
-#####################################
-
-## Raster
-terra::writeRaster(shrimp_rast, filename = file.path(raster_dir, "shrimp_transect_2014.grd"), overwrite = T)
 
 # calculate end time and print time difference
 print(Sys.time() - start) # print how long it takes to calculate
