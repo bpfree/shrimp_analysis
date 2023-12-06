@@ -56,8 +56,7 @@ pacman::p_load(docxtractr,
 shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
 
 ## Export directory
-data_dir <- "data/shrimp_annual"
-raster_dir <- "data/shrimp_annual"
+shapefile_dir <- "data/shrimp_annual/shapefiles"
 
 #####################################
 
@@ -137,7 +136,7 @@ shrimp_transects <- rbind(shrimp_transects2014,
 # Export data
 ## Vector
 sf::st_write(obj = shrimp_transects, dsn = shrimp_gpkg, layer = "shrimp_transects", sep = "/", append = F)
-sf::st_write(obj = shrimp_transects, dsn = file.path(paste(data_dir, "shrimp_transects.shp", sep = "/")), append = F)
+sf::st_write(obj = shrimp_transects, dsn = file.path(paste(shapefile_dir, "shrimp_transects.shp", sep = "/")), append = F)
 
 #####################################
 #####################################
