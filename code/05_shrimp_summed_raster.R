@@ -142,3 +142,9 @@ plot(shrimp_raster_2014_2021)
 
 # Export raster
 terra::writeRaster(shrimp_raster_2014_2021, filename = file.path(raster_dir, "shrimp_raster_2014_2021.grd"), overwrite = T)
+
+#####################################
+#####################################
+
+# calculate end time and print time difference
+print(Sys.time() - start) # print how long it takes to calculate
