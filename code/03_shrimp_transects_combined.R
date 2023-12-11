@@ -61,7 +61,6 @@ shapefile_dir <- "data/shrimp_annual/shapefiles"
 #####################################
 
 # View layer names within geopackage
-## ****Note: should notice 3 layers
 sf::st_layers(dsn = shrimp_gpkg,
               do_count = TRUE)
 
