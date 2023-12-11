@@ -208,7 +208,9 @@ for(i in 1:length(years_list)){
 #####################################
 #####################################
 
-
+# Export data
+## raster
+terra::writeRaster(rast_100m, filename = file.path(raster_dir, "shrimp_raster_100m.grd"), overwrite = T)
 
 #####################################
 #####################################
