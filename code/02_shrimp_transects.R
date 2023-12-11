@@ -128,12 +128,13 @@ ping_years <- pings_2014_2021 %>%
   dplyr::mutate(start_date = format(as.Date(STAMP, format="%Y/%m/%d"),"%Y"))
 
 years <- as.vector((unique(ping_years$start_date)))
+print(years)
 
 #####################################
 #####################################
 
 # run analysis
-# i <- 2
+# i <- 4
 for(i in 1:length(years)){
   
   # designate loop start time
@@ -270,6 +271,7 @@ for(i in 1:length(years)){
     # group by the vessel transect
     dplyr::group_by(vessel_trans) %>%
     # summarise all the associated points along the transect
+    ## do_union = FALSE will make points get added in order for the transect
     dplyr::summarise(do_union = FALSE) %>%
     # ensure all points are multipoint
     ## ***note: this is for any transect that is a single point
