@@ -270,7 +270,7 @@ for(i in 1:length(years)){
     # group by the vessel transect
     dplyr::group_by(vessel_trans) %>%
     # summarise all the associated points along the transect
-    dplyr::summarise() %>%
+    dplyr::summarise(do_union = FALSE) %>%
     # ensure all points are multipoint
     ## ***note: this is for any transect that is a single point
     sf::st_cast(x = .,
