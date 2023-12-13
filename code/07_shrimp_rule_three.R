@@ -182,4 +182,4 @@ for(i in 1:length(years_list)){
 #####################################
 
 # calculate end time and print time difference
-print(Sys.time() - start) # print how long it takes to calculate
+print(Sys.time() - start, units(Sys.time() - sum_start)) # print how long it takes to calculate
