@@ -189,7 +189,7 @@ for(i in 1:length(years_list)){
                                       y = rast_100m,
                                       # count number of occurrences in very cell
                                       fun = "count")
-  print(paste("Time takes to create data:", Sys.time() - start_time))
+  print(paste("Time takes to create data:", Sys.time() - start_time, units(Sys.time() - start_time)))
   
   # assign the rasterized transect data to templated raster grid
   assign(raster_year, shrimp_rast)
@@ -202,7 +202,7 @@ for(i in 1:length(years_list)){
   # Export data
   terra::writeRaster(shrimp_rast, filename = file.path(raster_dir, paste0(raster_year, ".grd")), overwrite = T)
   
-  print(paste("Time to complete total task:", Sys.time() - start_time, units(Sys.time() - sum_start)))
+  print(paste("Time to complete total task:", Sys.time() - start_time, units(Sys.time() - start_time)))
 }
 
 #####################################
@@ -222,4 +222,4 @@ terra::writeRaster(rast_100m, filename = file.path(raster_dir, "shrimp_raster_10
 # transect_test <- shrimp_transects[random]
 
 # calculate end time and print time difference
-print(Sys.time() - start) # print how long it takes to calculate
+print(Sys.time() - start, units(Sys.time() - start)) # print how long it takes to calculate
