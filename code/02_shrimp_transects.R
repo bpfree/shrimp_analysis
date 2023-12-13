@@ -109,12 +109,12 @@ very_small_islands <- sf::st_read(dsn = land_dir, layer = "very_small_islands")
 very_small_islands_time <- Sys.time()
 
 load_end <- Sys.time()
-paste("Time to take load shrimp data:", shrimp_time - load_start,
-      "Time to take load continents data:", continents_time - shrimp_time,
-      "Time to take load big islands data:", big_islands_time - continents_time,
-      "Time to take load small islands data:", small_islands_time - big_islands_time,
-      "Time to take load very small islands data:", very_small_islands_time - small_islands_time,
-      "Time to take load shrimp and land data:", load_end - load_start)
+paste("Time to take load shrimp data:", shrimp_time - load_start, units(shrimp_time - load_start),
+      "Time to take load continents data:", continents_time - shrimp_time, units(continents_time - shrimp_time),
+      "Time to take load big islands data:", big_islands_time - continents_time, units(big_islands_time - continents_time),
+      "Time to take load small islands data:", small_islands_time - big_islands_time, units(small_islands_time - big_islands_time),
+      "Time to take load very small islands data:", very_small_islands_time - small_islands_time, units(very_small_islands_time - small_islands_time),
+      "Time to take load shrimp and land data:", load_end - load_start, units(load_end - load_start))
 
 #####################################
 
@@ -225,7 +225,7 @@ for(i in 1:length(years)){
   
   # calculate time to create annual shrimp fishing data
   fishing_total <- Sys.time() - fishing_pings
-  print(fishing_total)
+  print(fishing_total, units(Sys.time() - fishing_pings))
   
   #####################################
   #####################################
@@ -255,11 +255,11 @@ for(i in 1:length(years)){
   
   # calculate time to create annual shrimp fishing data in only ocean areas
   ocean_total <- Sys.time() - ocean_time
-  print(ocean_total)
+  print(ocean_total, units(Sys.time() - ocean_time))
   
   # print the time it takes to complete the first two parts (fishing and now ocean pings by year)
   second_phase <- Sys.time() - start_time
-  print(paste("Time to complete first two analyses took:", second_phase))
+  print(paste("Time to complete first two analyses took:", second_phase, units(Sys.time() - start_time)))
   
   #####################################
   #####################################
@@ -295,18 +295,15 @@ for(i in 1:length(years)){
   
   # calculate time to create annual shrimp fishing transect data in only ocean areas
   transect_time <- Sys.time() - transect_time
-  print(transect_time)
+  print(transect_time, units(Sys.time() - transect_time))
   
   #####################################
   #####################################
   
   # calculate total time to finish the three components (fishing, ocean, and transect)
   total_time <- Sys.time() - start_time
-  print(paste0("Time to run the whole analysis for ", years[i], ": ", total_time))
+  print(paste0("Time to run the whole analysis for ", years[i], ": ", total_time, units(Sys.time() - start_time)))
 }
-
-analysis_time <- Sys.time() - start_time
-print(analysis_time)
 
 #####################################
 #####################################
@@ -325,4 +322,4 @@ print(analysis_time)
 #####################################
 
 # calculate end time and print time difference
-print(Sys.time() - start) # print how long it takes to calculate
+print(Sys.time() - start, units(Sys.time() - start)) # print how long it takes to calculate
