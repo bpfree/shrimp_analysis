@@ -240,4 +240,4 @@ sf::st_write(obj = gulf_polygon, dsn = shrimp_gpkg, layer = "gulf_mexico_polygon
 #####################################
 
 # calculate end time and print time difference
-print(Sys.time() - start) # print how long it takes to calculate
+print(Sys.time() - start, units(Sys.time() - sum_start)) # print how long it takes to calculate
