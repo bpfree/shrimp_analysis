@@ -103,15 +103,15 @@ shrimp_transects2021 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects
 time2021 <- Sys.time()
 
 load_end <- Sys.time()
-paste("Time to take load 2014 data:", time2014 - load_start,
-      "Time to take load 2015 data:", time2015 - load_start,
-      "Time to take load 2016 data:", time2016 - load_start,
-      "Time to take load 2017 data:", time2017 - load_start,
-      "Time to take load 2018 data:", time2018 - load_start,
-      "Time to take load 2019 data:", time2019 - load_start,
-      "Time to take load 2020 data:", time2020 - load_start,
-      "Time to take load 2021 data:", time2021 - load_start,
-      "Time to load all shrimp transect data:", load_end - load_start)
+paste("Time to take load 2014 data:", time2014 - load_start, units(time2014 - load_start),
+      "Time to take load 2015 data:", time2015 - load_start, units(time2015 - load_start),
+      "Time to take load 2016 data:", time2016 - load_start, units(time2016 - load_start),
+      "Time to take load 2017 data:", time2017 - load_start, units(time2017 - load_start),
+      "Time to take load 2018 data:", time2018 - load_start, units(time2018 - load_start),
+      "Time to take load 2019 data:", time2019 - load_start, units(time2019 - load_start),
+      "Time to take load 2020 data:", time2020 - load_start, units(time2020 - load_start),
+      "Time to take load 2021 data:", time2021 - load_start, units(time2021 - load_start),
+      "Time to load all shrimp transect data:", load_end - load_start, units(load_end - load_start))
 
 #####################################
 #####################################
@@ -141,4 +141,4 @@ sf::st_write(obj = shrimp_transects, dsn = file.path(paste(shapefile_dir, "shrim
 #####################################
 
 # calculate end time and print time difference
-print(Sys.time() - start) # print how long it takes to calculate
+print(Sys.time() - start, units(Sys.time() - start)) # print how long it takes to calculate
