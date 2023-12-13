@@ -100,7 +100,7 @@ for(i in 1:length(years_list)){
   # assign the shrimp pings data looped to templated annual data object
   assign(raster_year, shrimp_rast)
   
-  print(paste("Time to load shrimp raster data:", Sys.time() - start_time))
+  print(paste("Time to load shrimp raster data for ", years_list[i], ": ", Sys.time() - start_time, units(Sys.time() - start_time)))
 }
 
 # insepct data
@@ -130,7 +130,7 @@ shrimp_raster_2014_2021 <- c(shrimp_transect_raster_2014,
                              shrimp_transect_raster_2021) %>%
   terra::app(sum, na.rm = T)
 
-print(paste("Time taken to summarize all shrimp transect rasters:", Sys.time() - sum_start, units(Sys.time() - sum_start)))
+print(paste("Time taken to summarize all shrimp transect rasters for", years_list[i], ": ", Sys.time() - sum_start, units(Sys.time() - sum_start)))
 
 #####################################
 #####################################
@@ -147,4 +147,4 @@ terra::writeRaster(shrimp_raster_2014_2021, filename = file.path(raster_dir, "sh
 #####################################
 
 # calculate end time and print time difference
-print(Sys.time() - start) # print how long it takes to calculate
+print(Sys.time() - start, units(Sys.time() - start)) # print how long it takes to calculate
