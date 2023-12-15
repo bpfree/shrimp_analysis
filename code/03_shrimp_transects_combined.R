@@ -39,6 +39,7 @@ pacman::p_load(docxtractr,
                sf,
                shadowr,
                sp,
+               stringi,
                stringr,
                terra, # is replacing the raster package
                tidyr,
@@ -55,79 +56,70 @@ pacman::p_load(docxtractr,
 ## shrimp geopackage
 shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
 
-## Export directory
-shapefile_dir <- "data/shrimp_annual/shapefiles"
-
 #####################################
 
 # View layer names within geopackage
-sf::st_layers(dsn = shrimp_gpkg,
-              do_count = TRUE)
+transect_list <- c(sf::st_layers(dsn = shrimp_gpkg,
+                                 do_count = TRUE)[[1]]) %>%
+  # get only the layers that are for transects
+  stringr::str_subset(string = .,
+                      pattern = "transects") %>%
+  sort(decreasing = T) %>%
+  # remove the last element (NA) that comes from the dataset
+  head(., -1) %>%
+  # switch again so annual transects are ascending
+  sort(decreasing = F)
+
+# get years list
+year_list <- transect_list %>%
+  ## substitute nothing ("") in place of the "shrimp_transects" that is at the beginning of each layer name
+  ## this will give only the year
+  sub("shrimp_transects", "", .)
 
 #####################################
 #####################################
 
-load_start <- Sys.time()
-
-# load shrimp transect data
-## 2014 transects
-shrimp_transects2014 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects2014")
-time2014 <- Sys.time()
-
-## 2015 transects
-shrimp_transects2015 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects2015")
-time2015 <- Sys.time()
-
-## 2016 transects
-shrimp_transects2016 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects2016")
-time2016 <- Sys.time()
-
-## 2017 transects
-shrimp_transects2017 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects2017")
-time2017 <- Sys.time()
-
-## 2018 transects
-shrimp_transects2018 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects2018")
-time2018 <- Sys.time()
-
-## 2019 transects
-shrimp_transects2019 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects2019")
-time2019 <- Sys.time()
-
-## 2020 transects
-shrimp_transects2020 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects2020")
-time2020 <- Sys.time()
-
-## 2021 transects
-shrimp_transects2021 <- sf::st_read(dsn = shrimp_gpkg, layer = "shrimp_transects2021")
-time2021 <- Sys.time()
-
-load_end <- Sys.time()
-paste("Time to take load 2014 data:", time2014 - load_start, units(time2014 - load_start),
-      "Time to take load 2015 data:", time2015 - load_start, units(time2015 - load_start),
-      "Time to take load 2016 data:", time2016 - load_start, units(time2016 - load_start),
-      "Time to take load 2017 data:", time2017 - load_start, units(time2017 - load_start),
-      "Time to take load 2018 data:", time2018 - load_start, units(time2018 - load_start),
-      "Time to take load 2019 data:", time2019 - load_start, units(time2019 - load_start),
-      "Time to take load 2020 data:", time2020 - load_start, units(time2020 - load_start),
-      "Time to take load 2021 data:", time2021 - load_start, units(time2021 - load_start),
-      "Time to load all shrimp transect data:", load_end - load_start, units(load_end - load_start))
+# create reference table
+shrimp_transects <- sf::st_sf(vessel_trans = "",
+                              # make geometry a linestring
+                              geom = st_sfc(lapply(1, function(x) st_linestring())),
+                              # set coordinate reference system as EPSG:5070
+                              crs = "EPSG:5070") %>%
+  # remove first blank observation
+  dplyr::slice(-1)
 
 #####################################
-#####################################
 
-# combine all transects
-## combine all rows of transects across years 
-shrimp_transects <- rbind(shrimp_transects2014,
-                          shrimp_transects2015,
-                          shrimp_transects2016,
-                          shrimp_transects2017,
-                          shrimp_transects2018,
-                          shrimp_transects2019,
-                          shrimp_transects2020,
-                          shrimp_transects2021) %>%
-  # reproject the coordinate reference system to match BOEM call areas
-  sf::st_transform("EPSG:5070") # EPSG 5070 (https://epsg.io/5070)
+# load and clean shrimp transect data
+# i <- 1
+for(i in 1:length(transect_list)){
+  
+  # designate loop start time
+  start_time <- Sys.time()
+  
+  #####################################
+  
+  # create placeholder raster name
+  transect_year <- paste("shrimp_transect", year_list[i], sep = "_")
+  
+  #####################################
+  
+  # load data
+  shrimp_year <- sf::st_read(dsn = shrimp_gpkg, layer = transect_list[i])
+  
+  #####################################
+  
+  # assign the shrimp pings data looped to templated annual data object
+  assign(transect_year, shrimp_year)
+  
+  # add years to reference sf
+  shrimp_transects <- rbind(shrimp_transects, shrimp_year)
+  
+  # remove shrimp_year from environment
+  rm(shrimp_year)
+  
+  print(paste("Time to load shrimp transect data for ", year_list[i], ": ", Sys.time() - start_time, units(Sys.time() - start_time)))
+}
 
 #####################################
 #####################################
@@ -135,10 +127,9 @@ shrimp_transects <- rbind(shrimp_transects2014,
 # Export data
 ## Vector
 sf::st_write(obj = shrimp_transects, dsn = shrimp_gpkg, layer = "shrimp_transects", sep = "/", append = F)
-sf::st_write(obj = shrimp_transects, dsn = file.path(paste(shapefile_dir, "shrimp_transects.shp", sep = "/")), append = F)
 
 #####################################
 #####################################
 
 # calculate end time and print time difference
-print(Sys.time() - start, units(Sys.time() - start)) # print how long it takes to calculate
+paste(Sys.time() - start) # print how long it takes to calculate
