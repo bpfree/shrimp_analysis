@@ -39,6 +39,7 @@ pacman::p_load(docxtractr,
                sf,
                shadowr,
                sp,
+               stringi,
                stringr,
                terra, # is replacing the raster package
                tidyr,
@@ -68,23 +69,19 @@ sf::st_layers(dsn = shrimp_gpkg,
 #####################################
 #####################################
 
-# list all shapefiles to later extract the years
-shapefiles <- list.files(shapefile_dir,
-                         # pattern for finding files that match the shapefiles
-                         pattern = ".shp")
-
-# create species list of unique years of shrimp transects
-years_list <- unique(sapply(strsplit(x = shapefiles,
-                                     # split file names into elements by "_"
-                                     split = "_"),
-                            # function across all files is to return third element from the string
-                            ## in this case that is the year
-                            function(x) x[3])) %>%
-  # substitute nothing ("") in place of the .shp that is at the end of the string
+# View layer names within geopackage
+year_list <- c(sf::st_layers(dsn = shrimp_gpkg,
+                             do_count = TRUE)[[1]]) %>%
+  # get only the layers that are for transects
+  stringr::str_subset(string = .,
+                      pattern = "transects") %>%
+  ## substitute nothing ("") in place of the "shrimp_transects" that is at the beginning of each layer name
   ## this will give only the year
-  sub(".shp", "", .) %>%
-  # remove the last element (NA) that comes from the data set shrimp_transects.shp
-  head(., -1)
+  sub("shrimp_transects", "", .) %>%
+  # remove any element that is empty ("")
+  stringi::stri_remove_empty() %>%
+  # sort the vector so it is ascending
+  sort()
 
 #####################################
 #####################################
@@ -168,8 +165,8 @@ rast_100m <- terra::rasterize(x = aoi_poly,
 #####################################
 #####################################
 
-# i <- 1
-for(i in 1:length(years_list)){
+# i <- 8
+for(i in 1:length(year_list)){
   
   # designate loop start time
   start_time <- Sys.time()
@@ -177,11 +174,11 @@ for(i in 1:length(years_list)){
   #####################################
   
   # load data
-  shrimp_year <- terra::vect(file.path(shapefile_dir, paste0("shrimp_transects_", years_list[[i]], ".shp")))
+  shrimp_year <- terra::vect(x = shrimp_gpkg, layer = paste0("shrimp_transects", year_list[[i]]))
   
   # define annual object names for shrimp data
   ## shrimp transect data by year
-  raster_year <- paste("shrimp_transect_raster", years_list[i], sep = "_")
+  raster_year <- paste("shrimp_transect_raster", year_list[i], sep = "_")
   
   # create rasterized version of the shrimp transects data to the 100m resolution raster grid
   shrimp_rast <- terra::rasterizeGeom(x = shrimp_year,
@@ -189,7 +186,7 @@ for(i in 1:length(years_list)){
                                       y = rast_100m,
                                       # count number of occurrences in very cell
                                       fun = "count")
-  print(paste("Time takes to create data:", Sys.time() - start_time, units(Sys.time() - start_time)))
+  paste("Time takes to create data:", Sys.time() - start_time, units(Sys.time() - start_time))
   
   # assign the rasterized transect data to templated raster grid
   assign(raster_year, shrimp_rast)
@@ -202,7 +199,7 @@ for(i in 1:length(years_list)){
   # Export data
   terra::writeRaster(shrimp_rast, filename = file.path(raster_dir, paste0(raster_year, ".grd")), overwrite = T)
   
-  print(paste("Time to complete total task:", Sys.time() - start_time, units(Sys.time() - start_time)))
+  paste("Time to complete total task:", Sys.time() - start_time, units(Sys.time() - start_time))
 }
 
 #####################################
@@ -222,4 +219,4 @@ terra::writeRaster(rast_100m, filename = file.path(raster_dir, "shrimp_raster_10
 # transect_test <- shrimp_transects[random]
 
 # calculate end time and print time difference
-print(Sys.time() - start, units(Sys.time() - start)) # print how long it takes to calculate
+print(Sys.time() - start) # print how long it takes to calculate
