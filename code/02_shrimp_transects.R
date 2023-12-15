@@ -39,6 +39,7 @@ pacman::p_load(docxtractr,
                sf,
                shadowr,
                sp,
+               stringi,
                stringr,
                terra, # is replacing the raster package
                tidyr,
@@ -123,19 +124,19 @@ head(pings_2014_2021)
 names(pings_2014_2021)
 
 ## get years
-ping_years <- pings_2014_2021 %>%
+ping_year <- pings_2014_2021 %>%
   dplyr::select(STAMP) %>%
   dplyr::mutate(start_date = format(as.Date(STAMP, format="%Y/%m/%d"),"%Y"))
 
-years <- as.vector((unique(ping_years$start_date)))
-print(years)
+year_list <- as.vector((unique(ping_year$start_date)))
+print(year_list)
 
 #####################################
 #####################################
 
 # run analysis
-# i <- 4
-for(i in 1:length(years)){
+i <- 1
+for(i in 1:length(year_list)){
   
   # designate loop start time
   start_time <- Sys.time()
@@ -147,13 +148,13 @@ for(i in 1:length(years)){
   
   # define annual object names for shrimp data
   ## shrimp ping data by year
-  shrimp_ping_year <- paste0("shrimp_pings", years[i])
+  shrimp_ping_year <- paste0("shrimp_pings", year_list[i])
   
   ## shrimp ping data only in ocean by year
-  shrimp_ping_ocean_year <- paste0("shrimp_pings_ocean", years[i])
+  shrimp_ping_ocean_year <- paste0("shrimp_pings_ocean", year_list[i])
   
   ## shrimp transect data by year
-  shrimp_transect_year <- paste0("shrimp_transects", years[i])
+  shrimp_transect_year <- paste0("shrimp_transects", year_list[i])
   
   #####################################
   #####################################
@@ -167,7 +168,7 @@ for(i in 1:length(years)){
     dplyr::filter(.,
                   # search for the year within the STAMP field
                   stringr::str_detect(string = .$STAMP,
-                                      pattern = years[i])) %>%
+                                      pattern = year_list[i])) %>%
     # remove bad coordinates
     ## any latitudes below or above -90 and 90 or longitudes below and above -180 and 180 are not real
     filter(between(LATITUDE, -90, 90), between(LONGITUDE, -180, 180)) %>%
@@ -221,11 +222,11 @@ for(i in 1:length(years)){
   assign(shrimp_ping_year, shrimp_pings)
   
   # Export data
-  sf::st_write(obj = shrimp_pings, dsn = shrimp_gpkg, layer = paste0("shrimp_pings", years[i]), append = F)
+  sf::st_write(obj = shrimp_pings, dsn = shrimp_gpkg, layer = paste0("shrimp_pings", year_list[i]), append = F)
   
   # calculate time to create annual shrimp fishing data
   fishing_total <- Sys.time() - fishing_pings
-  print(fishing_total, units(Sys.time() - fishing_pings))
+  print(fishing_total)
   
   #####################################
   #####################################
@@ -251,11 +252,11 @@ for(i in 1:length(years)){
   assign(shrimp_ping_ocean_year, shrimp_pings_ocean)
   
   # Export data
-  sf::st_write(obj = shrimp_pings_ocean, dsn = shrimp_gpkg, layer = paste0("shrimp_pings_ocean", years[i]), append = F)
+  sf::st_write(obj = shrimp_pings_ocean, dsn = shrimp_gpkg, layer = paste0("shrimp_pings_ocean", year_list[i]), append = F)
   
   # calculate time to create annual shrimp fishing data in only ocean areas
   ocean_total <- Sys.time() - ocean_time
-  print(ocean_total, units(Sys.time() - ocean_time))
+  print(ocean_total)
   
   # print the time it takes to complete the first two parts (fishing and now ocean pings by year)
   second_phase <- Sys.time() - start_time
@@ -269,10 +270,17 @@ for(i in 1:length(years)){
   # create transects for marine only shrimp data by year
   shrimp_transects <- shrimp_pings_ocean %>%
     # group by the vessel transect
-    dplyr::group_by(vessel_trans) %>%
+    dplyr::group_by(VSBN, vessel_trans) %>%
     # summarise all the associated points along the transect
     ## do_union = FALSE will make points get added in order for the transect
     dplyr::summarise(do_union = FALSE) %>%
+    # add year back as a field
+    dplyr::mutate(year = year_list[i]) %>%
+    # relocate year before vessel and vessel transect
+    dplyr::relocate(year,
+                    .before = VSBN) %>%
+    # set as simple feature (sf)
+    sf::st_sf() %>%
     # ensure all points are multipoint
     ## ***note: this is for any transect that is a single point
     sf::st_cast(x = .,
@@ -288,21 +296,21 @@ for(i in 1:length(years)){
   
   # Export data
   ## Geopackage
-  sf::st_write(obj = shrimp_transects, dsn = shrimp_gpkg, layer = paste0("shrimp_transects", years[i]), append = F)
+  sf::st_write(obj = shrimp_transects, dsn = shrimp_gpkg, layer = paste0("shrimp_transects", year_list[i]), append = F)
   
   ## Shapefile (***note: this is so the year transects can get used by terra to create a raster dataset)
-  sf::st_write(obj = shrimp_transects, dsn = file.path(paste(shapefile_dir, paste0("shrimp_transects_", years[i], ".shp"), sep = "/")), append = F)
+  # sf::st_write(obj = shrimp_transects, dsn = file.path(paste(shapefile_dir, paste0("shrimp_transects_", year_list[i], ".shp"), sep = "/")), append = F)
   
   # calculate time to create annual shrimp fishing transect data in only ocean areas
   transect_time <- Sys.time() - transect_time
-  print(transect_time, units(Sys.time() - transect_time))
+  print(transect_time)
   
   #####################################
   #####################################
   
   # calculate total time to finish the three components (fishing, ocean, and transect)
   total_time <- Sys.time() - start_time
-  print(paste0("Time to run the whole analysis for ", years[i], ": ", total_time, units(Sys.time() - start_time)))
+  print(paste0("Time to run the whole analysis for ", year_list[i], ": ", total_time, units(Sys.time() - start_time)))
 }
 
 #####################################
@@ -322,4 +330,4 @@ for(i in 1:length(years)){
 #####################################
 
 # calculate end time and print time difference
-print(Sys.time() - start, units(Sys.time() - start)) # print how long it takes to calculate
+print(Sys.time() - start) # print how long it takes to calculate

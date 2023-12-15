@@ -39,6 +39,7 @@ pacman::p_load(docxtractr,
                sf,
                shadowr,
                sp,
+               stringi,
                stringr,
                terra, # is replacing the raster package
                tidyr,
@@ -108,7 +109,7 @@ continents <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_
   land_function()
 continents_time <- Sys.time()
 
-paste("Time to take load continents data:", continents_time - load_start)
+paste("Time to take load continents data:", continents_time - load_start, units(continents_time - load_start))
 
 ### Load big island land data
 big_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_BigIslands") %>%
@@ -119,7 +120,7 @@ big_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2
   sf::st_make_valid()
 big_islands_time <- Sys.time()
 
-paste("Time to take load big islands data:", big_islands_time - continents_time)
+paste("Time to take load big islands data:", big_islands_time - continents_time, units(big_islands_time - continents_time))
 
 ### Load small island land data
 small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_SmallIslands") %>%
@@ -127,7 +128,7 @@ small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslands
   land_function()
 small_islands_time <- Sys.time()
 
-paste("Time to take load big islands data:", small_islands_time - big_islands_time)
+paste("Time to take load big islands data:", small_islands_time - big_islands_time, units(small_islands_time - big_islands_time))
 
 ### Load very small island land data
 very_small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIslandsv2_VerySmallIslands") %>%
@@ -135,10 +136,10 @@ very_small_islands <- sf::st_read(dsn = land_dir, layer = "USGSEsriWCMC_GlobalIs
   land_function()
 very_small_islands_time <- Sys.time()
 
-paste("Time to take load big islands data:", very_small_islands_time - small_islands_time)
+paste("Time to take load big islands data:", very_small_islands_time - small_islands_time, units(very_small_islands_time - small_islands_time))
 
 load_end <- Sys.time()
-paste("Time to take load land data:", load_end - load_start)
+paste("Time to take load land data:", load_end - load_start, units(load_end - load_start))
 
 #####################################
 #####################################
@@ -150,6 +151,8 @@ sf::st_write(obj = small_islands, dsn = land_gpkg, layer = "small_islands", appe
 sf::st_write(obj = very_small_islands, dsn = land_gpkg, layer = "very_small_islands", append = F)
 
 ### ***Note: big islands cannot get saved to the geopackage so instead gets exported as an RDS (.RData) file
+### This is likely as when it becomes a multipolygon it has more than 999 columns
+### See more here: https://github.com/r-spatial/sf/issues/1506
 terra::saveRDS(object = big_islands, file = file.path(paste(export_dir, "big_islands.RData", sep = "/")))
 
 #####################################
