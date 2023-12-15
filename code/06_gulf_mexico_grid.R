@@ -40,6 +40,7 @@ pacman::p_load(docxtractr,
                sf,
                shadowr,
                sp,
+               stringi,
                stringr,
                terra, # is replacing the raster package
                tidyr,
@@ -53,7 +54,7 @@ pacman::p_load(docxtractr,
 #####################################
 
 # Directories
-## shrimp shapefiles
+## shrimp geopackage
 shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
 
 ## big islands directory
@@ -61,9 +62,6 @@ big_islands_dir <- "data/shrimp_annual"
 
 ## land directory
 land_dir <- "data/shrimp_annual/land.gpkg"
-
-## export directory
-shrimp_gpkg <- "data/shrimp_annual/shrimp.gpkg"
 
 #####################################
 
