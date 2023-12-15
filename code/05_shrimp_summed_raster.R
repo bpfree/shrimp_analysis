@@ -39,6 +39,7 @@ pacman::p_load(docxtractr,
                sf,
                shadowr,
                sp,
+               stringi,
                stringr,
                terra, # is replacing the raster package
                tidyr,
@@ -58,17 +59,17 @@ raster_dir <- "data/shrimp_annual/rasters"
 #####################################
 
 # inspect which years there are rasters for
-years <- list.files(raster_dir,
-                    # pattern for finding files that match the shapefiles
-                    pattern = ".grd")
+year <- list.files(raster_dir,
+                   # pattern for finding files that match the shapefiles
+                   pattern = ".grd")
 
 # create species list of unique years of shrimp transects
-years_list <- unique(sapply(strsplit(x = years,
-                                     # split file names into elements by "_"
-                                     split = "_"),
-                            # function across all files is to return third element from the string
-                            ## in this case that is the year
-                            function(x) x[4])) %>%
+year_list <- unique(sapply(strsplit(x = year,
+                                    # split file names into elements by "_"
+                                    split = "_"),
+                           # function across all files is to return third element from the string
+                           ## in this case that is the year
+                           function(x) x[4])) %>%
   # remove all elements that will have .grd.aux.xml patterns
   stringr::str_subset(string = ., pattern = ".xml", negate = TRUE) %>%
   # substitute nothing ("") in place of the .grd or .grd.aux.xml that is at the end of the string
@@ -80,7 +81,7 @@ years_list <- unique(sapply(strsplit(x = years,
 
 # load rasters
 # i <- 1
-for(i in 1:length(years_list)){
+for(i in 1:length(year_list)){
   
   # designate loop start time
   start_time <- Sys.time()
@@ -88,19 +89,19 @@ for(i in 1:length(years_list)){
   #####################################
   
   # create placeholder raster name
-  raster_year <- paste("shrimp_transect_raster", years_list[i], sep = "_")
+  raster_year <- paste("shrimp_transect_raster", year_list[i], sep = "_")
   
   #####################################
   
   # load data
-  shrimp_rast <- terra::rast(x = file.path(raster_dir, paste0("shrimp_transect_raster_", years_list[[i]], ".grd")))
+  shrimp_rast <- terra::rast(x = file.path(raster_dir, paste0("shrimp_transect_raster_", year_list[[i]], ".grd")))
   
   #####################################
   
   # assign the shrimp pings data looped to templated annual data object
   assign(raster_year, shrimp_rast)
   
-  print(paste("Time to load shrimp raster data for ", years_list[i], ": ", Sys.time() - start_time, units(Sys.time() - start_time)))
+  print(paste("Time to load shrimp raster data for ", year_list[i], ": ", Sys.time() - start_time, units(Sys.time() - start_time)))
 }
 
 # insepct data
@@ -130,7 +131,7 @@ shrimp_raster_2014_2021 <- c(shrimp_transect_raster_2014,
                              shrimp_transect_raster_2021) %>%
   terra::app(sum, na.rm = T)
 
-print(paste("Time taken to summarize all shrimp transect rasters for", years_list[i], ": ", Sys.time() - sum_start, units(Sys.time() - sum_start)))
+print(paste("Time taken to summarize all shrimp transect rasters for", year_list[i], ": ", Sys.time() - sum_start, units(Sys.time() - sum_start)))
 
 #####################################
 #####################################
@@ -147,4 +148,4 @@ terra::writeRaster(shrimp_raster_2014_2021, filename = file.path(raster_dir, "sh
 #####################################
 
 # calculate end time and print time difference
-print(Sys.time() - start, units(Sys.time() - start)) # print how long it takes to calculate
+print(Sys.time() - start) # print how long it takes to calculate
